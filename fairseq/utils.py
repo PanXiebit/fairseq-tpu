@@ -50,6 +50,12 @@ def apply_to_sample(f, sample):
 
     return _apply(sample)
 
+def move_to_tpu(sample, device):
+
+    def _move_to_tpu(tensor):
+        return tensor.to(device)
+
+    return apply_to_sample(_move_to_tpu, sample)
 
 def move_to_cuda(sample):
 

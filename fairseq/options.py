@@ -43,11 +43,28 @@ class Config():
     sharing_gen_dis = True
     decoder_output_dim = 512
 
+    # criterion
     label_smoothing = 0.1
     gen_weights = 1.0
     dis_weights = 1.0
 
+    # optimizer
+    lr = [0.0005]
+    lr_scheduler = 'inverse_sqrt'
+    adam_betas = '(0.9, 0.999)'
+    adam_eps = 1e-06
+    warmup_init_lr = 1e-07
+    warmup_updates = 10000
+    weight_decay = 0.01
+
+    log_steps = 100
+    checkpoint_path = "output/my_maskPredict_en_ro"
+    num_epochs = 100
+    num_cores = 8
+
     use_gpu = True
+
+
 
 
 
