@@ -34,7 +34,7 @@ class BaseFairseqModel(nn.Module):
         pass
 
     @classmethod
-    def build_model(cls, args, task):
+    def build_model(cls, args, **kwg):
         """Build a new model instance."""
         raise NotImplementedError('Model must implement the build_model method')
 
@@ -438,8 +438,8 @@ class FairseqEncoderModel(BaseFairseqModel):
         """Maximum length supported by the model."""
         return self.encoder.max_positions()
 
-    
-    
+
+
 class FairseqEncoderDecoderGanModel(BaseFairseqModel):
     """Base class for encoder-decoder models.
 
@@ -463,7 +463,11 @@ class FairseqEncoderDecoderGanModel(BaseFairseqModel):
         self.dis_decoder_head = nn.Linear(self.decoder_embed_dim, 1)
         
         self.temperature = 1.0
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if args.use_gpu:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            import torch_xla.core.xla_model as xm
+            self.device = xm.xla_device()
 
     def forward(self, src_tokens, src_lengths, prev_output_tokens, real_target, **kwargs):
         """
@@ -493,13 +497,17 @@ class FairseqEncoderDecoderGanModel(BaseFairseqModel):
         # {'encoder_out': x,  # T x B x C
         #  'encoder_padding_mask': encoder_padding_mask,  # B x T
         #  'predicted_lengths': predicted_lengths, # B x L}
-        
+        print("encoder_out", encoder_out["encoder_out"].shape)
+
         gen_decoder_out = self.g_decoder(prev_output_tokens, encoder_out=encoder_out, self_attn=False, **kwargs)
         #  x, {'attn': attn, 'inner_states': inner_states, 'predicted_lengths': encoder_out['predicted_lengths']}
         # default: sharing input and output embedding
-        
+        print("gen_decoder_out", gen_decoder_out[0].shape)
+
+
         gen_dec_logits = F.linear(gen_decoder_out[0], self.decoder_embed_tokens.weight)
-        
+
+
         # discriminator
         fake_data = self._get_fake_data(prev_output_tokens, real_target, gen_dec_logits, self.temperature)
         fake_data = Variable(fake_data, requires_grad=False)
@@ -509,7 +517,8 @@ class FairseqEncoderDecoderGanModel(BaseFairseqModel):
             [shifted_fake_data.new(fake_data.size(0), 1).fill_(self.tgt_dict.bos()), shifted_fake_data], dim=1)
         
         dis_decoder_out = self.d_decoder(shifted_fake_data, encoder_out=encoder_out, self_attn=True, **kwargs)
-        dis_dec_logits=  self.dis_decoder_head(dis_decoder_out[0])
+        dis_dec_logits =  self.dis_decoder_head(dis_decoder_out[0])
+        print("dis_dec_logits", dis_dec_logits.shape)
         return gen_dec_logits, dis_dec_logits, encoder_out['predicted_lengths'], fake_data,\
                gen_decoder_out[1], dis_decoder_out[1]
 

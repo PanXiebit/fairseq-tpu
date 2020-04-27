@@ -9,7 +9,7 @@ import inspect
 
 from torch.nn import parallel
 
-from fairseq.legacy_distributed_data_parallel import LegacyDistributedDataParallel
+# from fairseq.legacy_distributed_data_parallel import LegacyDistributedDataParallel
 from fairseq.models import BaseFairseqModel
 
 

@@ -27,14 +27,15 @@ from .fairseq_model import (
     FairseqEncoderDecoderGanModel,
 )
 
+from .bert_seq2seq_gan import Transformer_nonautoregressive_gan
 from .composite_encoder import CompositeEncoder
-from .distributed_fairseq_model import DistributedFairseqModel
+# from .distributed_fairseq_model import DistributedFairseqModel
 
 
 __all__ = [
     'BaseFairseqModel',
     'CompositeEncoder',
-    'DistributedFairseqModel',
+    # 'DistributedFairseqModel',
     'FairseqDecoder',
     'FairseqEncoder',
     'FairseqEncoderDecoderModel',

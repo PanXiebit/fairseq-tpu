@@ -122,11 +122,26 @@ class TranslationSelfDataset(Dataset):
             mask_range=self.args.mask_range,
             train=train,
             seed=seed,
+            input_shapes=self.args.input_shapes
         )
+
+    def max_positions(self):
+        """Return the max sentence length allowed by the task."""
+        return (self.args.max_source_positions, self.args.max_target_positions)
+
+    @property
+    def source_dictionary(self):
+        """Return the source :class:`~fairseq.data.Dictionary`."""
+        return self.src_dict
+
+    @property
+    def target_dictionary(self):
+        """Return the target :class:`~fairseq.data.Dictionary`."""
+        return self.tgt_dict
 
 
 def get_batch_iterator(
-        dataset, max_tokens=None, max_sentences=None, max_positions=None,
+        dataset, input_shapes, max_tokens=None, max_sentences=None, max_positions=None,
         ignore_invalid_inputs=False, required_batch_size_multiple=1,
         seed=1, num_shards=1, shard_id=0, num_workers=0, epoch=0,
     ):
@@ -174,10 +189,11 @@ def get_batch_iterator(
             )
 
         # create mini-batches with given size constraints
-        batch_sampler = data_utils.batch_by_size(
-            indices, dataset.num_tokens, max_tokens=max_tokens, max_sentences=max_sentences,
-            required_batch_size_multiple=required_batch_size_multiple,
-        )
+        # batch_sampler = data_utils.batch_by_size(
+        #     indices, dataset.num_tokens, max_tokens=max_tokens, max_sentences=max_sentences,
+        #     required_batch_size_multiple=required_batch_size_multiple,
+        # )
+        batch_sampler = data_utils.batch_by_size_tpu(indices, dataset.num_tokens, input_shapes)
 
         # return a reusable, sharded iterator
         # return iterators.EpochBatchIterator(

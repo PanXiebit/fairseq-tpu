@@ -15,7 +15,7 @@ from fairseq.data.fairseq_dataset import FairseqDataset
 
 def collate(
     samples, pad_idx, eos_idx, bos_idx, left_pad_source=True, left_pad_target=False,
-    input_feeding=True, add_bos=True
+    input_feeding=True, add_bos=True, input_shapes=None,
 ):
     if len(samples) == 0:
         return {}
@@ -26,13 +26,13 @@ def collate(
             for i in range(len(samples[0][key])):
                 res.append(data_utils.collate_tokens(
                     [s[key][i] for s in samples], pad_idx, eos_idx, bos_idx, left_pad=False, 
-                    add_bos=add_bos, is_decoder_src=is_decoder_src
+                    add_bos=add_bos, is_decoder_src=is_decoder_src, input_shapes=input_shapes
                 ))
             return res
         else:
             return data_utils.collate_tokens(
                 [s[key] for s in samples], pad_idx, eos_idx, bos_idx, left_pad=False, 
-                add_bos=add_bos, is_decoder_src=is_decoder_src
+                add_bos=add_bos, is_decoder_src=is_decoder_src, input_shapes=input_shapes
             )
 
     is_target_list = isinstance(samples[0]['dec_target'], list)
@@ -126,6 +126,7 @@ class LanguagePairSelfDatasetMask(FairseqDataset):
         mask_range=False,
         train=True,
         seed=None,
+        input_shapes = None
     ):
         if tgt_dict is not None:
             assert src_dict.pad() == tgt_dict.pad()
@@ -151,6 +152,7 @@ class LanguagePairSelfDatasetMask(FairseqDataset):
         self.seed = seed
         
         self.add_bos = add_bos
+        self.input_shapes = input_shapes
 
 
     def __getitem__(self, index):
@@ -226,7 +228,7 @@ class LanguagePairSelfDatasetMask(FairseqDataset):
         return collate(
             samples, pad_idx=self.src_dict.pad(), eos_idx=self.src_dict.eos(), bos_idx=self.src_dict.bos(), 
             left_pad_source=self.left_pad_source, left_pad_target=self.left_pad_target,
-            input_feeding=self.input_feeding, add_bos=self.add_bos
+            input_feeding=self.input_feeding, add_bos=self.add_bos, input_shapes=self.input_shapes
         )
 
     def get_dummy_batch(self, num_tokens, max_positions, src_len=128, tgt_len=128):

@@ -240,8 +240,9 @@ class IndexedRawTextDataset(FairseqDataset):
         self.size = len(self.tokens_list)
 
     def read_data(self, path, dictionary):
+        from tqdm import tqdm
         with open(path, 'r', encoding='utf-8') as f:
-            for line in f:
+            for line in tqdm(f):
                 self.lines.append(line.strip('\n'))
                 tokens = dictionary.encode_line(
                     line, add_if_not_exist=False,
