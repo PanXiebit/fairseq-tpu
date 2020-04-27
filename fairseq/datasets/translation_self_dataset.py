@@ -6,10 +6,10 @@ from fairseq.data import (
     IndexedRawTextDataset, IndexedCachedDataset, IndexedDataset, LanguagePairSelfDatasetMask
 )
 from fairseq.data.fairseq_dataset import FairseqDataset
+from torch.utils.data import DataLoader, Dataset
 
 
-
-class TranslationSelfDataset(torch.utils.data.Dataset):
+class TranslationSelfDataset(Dataset):
     def __init__(self, args, src_dict, tgt_dict):
         super(TranslationSelfDataset, self).__init__()
         # find language pair automatically
@@ -110,7 +110,7 @@ class TranslationSelfDataset(torch.utils.data.Dataset):
         else:
             raise Exception('No such split: ' + str(split))
 
-        self.datasets[split] = LanguagePairSelfDatasetMask(
+        return LanguagePairSelfDatasetMask(
             src_dataset, src_dataset.sizes, self.src_dict,
             tgt_dataset, tgt_dataset.sizes, self.tgt_dict,
             left_pad_source=self.args.left_pad_source,
@@ -180,13 +180,18 @@ def get_batch_iterator(
         )
 
         # return a reusable, sharded iterator
-        return iterators.EpochBatchIterator(
+        # return iterators.EpochBatchIterator(
+        #     dataset=dataset,
+        #     collate_fn=dataset.collater,
+        #     batch_sampler=batch_sampler,
+        #     seed=seed,
+        #     num_shards=num_shards,
+        #     shard_id=shard_id,
+        #     num_workers=num_workers,
+        #     epoch=epoch,
+        # )
+        return DataLoader(
             dataset=dataset,
-            collate_fn=dataset.collater,
             batch_sampler=batch_sampler,
-            seed=seed,
-            num_shards=num_shards,
-            shard_id=shard_id,
             num_workers=num_workers,
-            epoch=epoch,
-        )
+            collate_fn=dataset.collater)
